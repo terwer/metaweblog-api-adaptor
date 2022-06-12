@@ -4,13 +4,21 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import com.terwergreen.metaweblogapiadaptor.MetaweblogApiAdaptorApplication;
+import com.terwergreen.metaweblogapiadaptor.adaptor.impl.CnblogsXmlrpcAdaptor;
+import com.terwergreen.metaweblogapiadaptor.adaptor.impl.ConfluenceRestAdaptor;
+import com.terwergreen.metaweblogapiadaptor.adaptor.impl.ConfluenceXmlrpcAdaptor;
+import com.terwergreen.metaweblogapiadaptor.constant.ApiTypeEnum;
 import com.terwergreen.metaweblogapiadaptor.constant.Constants;
 import com.terwergreen.metaweblogapiadaptor.plantform.AbstractRestApiClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
+import java.util.Properties;
 
 /**
  * 封装的Confluence Rest Api客户端入口
@@ -63,7 +71,7 @@ public class ConfluenceRestApiClient extends AbstractRestApiClient {
         try {
             // 格式化请求url
             final String expand = URLEncoder.encode(StringUtils.join(expansions, ","), Constants.ENCODING);
-            String requestUrl = String.format("%s/rest/api/content/%s?expand=%s", confluenceCloudBaseUrl, contentId, expand, URLEncoder.encode(username, Constants.ENCODING), URLEncoder.encode(password, Constants.ENCODING));
+            String requestUrl = String.format("%s/content/%s?expand=%s", confluenceCloudBaseUrl, contentId, expand, URLEncoder.encode(username, Constants.ENCODING), URLEncoder.encode(password, Constants.ENCODING));
             logger.info("getContent.requestUrl=>" + requestUrl);
 
             requestUrl = "https://youweics.atlassian.net/wiki/rest/api/content";
@@ -82,7 +90,7 @@ public class ConfluenceRestApiClient extends AbstractRestApiClient {
      * @param newPage 页面数据结构
      */
     public String newPage(JSONObject newPage) {
-        String requestUrl = String.format("%s/rest/api/content/", confluenceCloudBaseUrl);
+        String requestUrl = String.format("%s/content/", confluenceCloudBaseUrl);
         String jsonData = JSON.toJSONString(newPage);
 
         String result = this.executeRestApiPOSTJson(requestUrl, username, password, jsonData);
@@ -187,8 +195,21 @@ public class ConfluenceRestApiClient extends AbstractRestApiClient {
     }
 
     public static void main(String[] args) {
-        ConfluenceRestApiClient client = new ConfluenceRestApiClient(null, null, null);
+        // ==============
+        // 读取配置
+        // ==============
+        Properties blogProps = new Properties();
+        InputStream blogPropsStream = MetaweblogApiAdaptorApplication.class.getClassLoader().getResourceAsStream("application-pro.properties");
+        try {
+            blogProps.load(blogPropsStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ConfluenceRestApiClient client = new ConfluenceRestApiClient((String) blogProps.get("blog.meteweblog.confluence.rest.serverUrl"), (String) blogProps.get("blog.meteweblog.confluence.rest.username"), (String) blogProps.get("blog.meteweblog.confluence.rest.password"));
 
+        // ==============
+        // 测试getPage
+        // ==============
         //This is the Page ID that can be found
         //if you go to the "Page Information" section
         //within Confluence
@@ -196,12 +217,14 @@ public class ConfluenceRestApiClient extends AbstractRestApiClient {
 //        String content = client.getPage(pageId, new String[]{"body.storage", "version", "ancestors"});
 //        logger.info("client.getContent=>" + content);
 
+        // ==============
+        // 测试newPage
+        // ==============
         String wikiPageTitle = "My Awesome Page";
         String wikiPage = "<h1>Things That Are Awesome</h1><ul><li>Birds</li><li>Mammals</li><li>Decapods</li></ul>";
         String wikiSpace = "SPC";
         String labelToAdd = "awesome_stuff";
         int parentPageId = 1277961;
-
         JSONObject newPage = defineConfluencePage(wikiPageTitle,
                 wikiPage,
                 wikiSpace,

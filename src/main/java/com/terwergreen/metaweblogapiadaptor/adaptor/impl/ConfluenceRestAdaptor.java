@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.terwergreen.metaweblogapiadaptor.constant.ConfluenceConstants.CONFLUENCE_DEFAULT_SPACE_KEY;
+import static com.terwergreen.metaweblogapiadaptor.plantform.confluence.ConfluenceRestApiClient.defineConfluencePage;
 
 /**
  * Confluence的Rest适配器
@@ -75,7 +76,37 @@ public class ConfluenceRestAdaptor extends AbstractXmlRpcClient implements IBlog
     // ====================
     @Override
     public String newPost(String blogid, String username, String password, Map<String, Object> post, boolean publish) throws XmlRpcException {
-        return null;
+        // logger.info("metaWeblog.newPost -> blogid: {}, post: {}, publish: {}", blogid, JSON.toJSONString(post), publish);
+        logger.info("metaWeblog.newPost -> blogid: {}, publish: {}", blogid, publish);
+
+        // isValid(username, password);
+
+        JSONObject postJson = JSONObject.parseObject(JSON.toJSONString(post));
+        logger.debug("postJson = {}", postJson);
+
+        // 1、准备数据
+        String wikiPageTitle = postJson.getString("title");
+        String wikiPage = postJson.getString("description");
+        String wikiSpace = CONFLUENCE_DEFAULT_SPACE_KEY;
+        String labelToAdd = "awesome_stuff";
+        int parentPageId = 1277961;
+
+        // 开始调用confluence rest api
+        JSONObject newPage = defineConfluencePage(wikiPageTitle,
+                wikiPage,
+                wikiSpace,
+                labelToAdd,
+                parentPageId);
+        String reuslt = restApiClient.newPage(newPage);
+        JSONObject rtnObj = JSON.parseObject(reuslt);
+        String id = rtnObj.getString("id");
+        if (id == null) {
+            logger.error("client.newPage error,message=>" + rtnObj.getString("message"));
+            return "0";
+        }
+        logger.info("client.newPage success,id=>" + reuslt);
+        // logger.info("client.newPage=>" + reuslt);
+        return reuslt;
     }
 
     @Override
