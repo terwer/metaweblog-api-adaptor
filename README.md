@@ -1,2 +1,2 @@
 # metaweblog-api-adaptor
-metaweblog-api-adaptor
+a metaweblog api adaptor
