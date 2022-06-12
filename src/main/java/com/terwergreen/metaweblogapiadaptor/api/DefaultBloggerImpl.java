@@ -29,7 +29,7 @@ public class DefaultBloggerImpl implements IBloggerApi {
     private static Properties blogProps = new Properties();
 
     static {
-        InputStream blogPropsStream = MetaweblogApiAdaptorApplication.class.getClassLoader().getResourceAsStream("application.properties");
+        InputStream blogPropsStream = MetaweblogApiAdaptorApplication.class.getClassLoader().getResourceAsStream("application-pro.properties");
         try {
             blogProps.load(blogPropsStream);
         } catch (IOException e) {
